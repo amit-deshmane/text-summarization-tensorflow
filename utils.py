@@ -8,8 +8,11 @@ from gensim.test.utils import get_tmpfile
 from gensim.scripts.glove2word2vec import glove2word2vec
 
 
-train_article_path = "sumdata/train/train.article.txt"
-train_title_path = "sumdata/train/train.title.txt"
+# train_article_path = "sumdata/train/train.article.txt"
+# train_title_path = "sumdata/train/train.title.txt"
+train_article_path = "kaggle_data/input.txt"
+train_title_path = "kaggle_data/output.txt"
+
 valid_article_path = "sumdata/train/valid.article.filter.txt"
 valid_title_path = "sumdata/train/valid.title.filter.txt"
 
@@ -26,6 +29,9 @@ def get_text_list(data_path, toy):
         else:
             return [clean_str(x.strip()) for x in f.readlines()][:50000]
 
+def get_data_point(text):
+    # tokenize, lowercase, ...
+    return [clean_str(text.strip())]
 
 def build_dict(step, toy=False):
     if step == "train":
@@ -55,11 +61,35 @@ def build_dict(step, toy=False):
 
     reversed_dict = dict(zip(word_dict.values(), word_dict.keys()))
 
-    article_max_len = 50
-    summary_max_len = 15
+    # article_max_len = 50
+    # summary_max_len = 15
+    article_max_len = 200
+    summary_max_len = 50
 
     return word_dict, reversed_dict, article_max_len, summary_max_len
 
+
+def build_datapoint(step, word_dict, article_max_len, summary_max_len, input_text, toy=False):
+    if step == "train":
+        article_list = get_text_list(train_article_path, toy)
+        title_list = get_text_list(train_title_path, toy)
+    elif step == "valid":
+        article_list = get_data_point(input_text)
+    else:
+        raise NotImplementedError
+
+    x = [word_tokenize(d) for d in article_list]
+    x = [[word_dict.get(w, word_dict["<unk>"]) for w in d] for d in x]
+    x = [d[:article_max_len] for d in x]
+    x = [d + (article_max_len - len(d)) * [word_dict["<padding>"]] for d in x]
+
+    if step == "valid":
+        return x
+    else:
+        y = [word_tokenize(d) for d in title_list]
+        y = [[word_dict.get(w, word_dict["<unk>"]) for w in d] for d in y]
+        y = [d[:(summary_max_len - 1)] for d in y]
+        return x, y
 
 def build_dataset(step, word_dict, article_max_len, summary_max_len, toy=False):
     if step == "train":
@@ -97,7 +127,7 @@ def batch_iter(inputs, outputs, batch_size, num_epochs):
 
 
 def get_init_embedding(reversed_dict, embedding_size):
-    glove_file = "glove/glove.42B.300d.txt"
+    glove_file = "glove/glove.840B.300d.txt"
     word2vec_file = get_tmpfile("word2vec_format.vec")
     glove2word2vec(glove_file, word2vec_file)
     print("Loading Glove vectors...")

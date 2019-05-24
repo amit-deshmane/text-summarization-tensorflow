@@ -84,7 +84,7 @@ with tf.Session() as sess:
 
         _, step, loss = sess.run([model.update, model.global_step, model.loss], feed_dict=train_feed_dict)
 
-        if step % 1000 == 0:
+        if step % 100 == 0:
             print("step {0}: loss = {1}".format(step, loss))
 
         if step % num_batches_per_epoch == 0:

@@ -3,6 +3,7 @@ import re
 import collections
 import pickle
 import numpy as np
+import os
 from gensim.models.keyedvectors import KeyedVectors
 from gensim.test.utils import get_tmpfile
 from gensim.scripts.glove2word2vec import glove2word2vec
@@ -128,7 +129,12 @@ def batch_iter(inputs, outputs, batch_size, num_epochs):
 
 def get_init_embedding(reversed_dict, embedding_size):
     glove_file = "glove/glove.840B.300d.txt"
-    word2vec_file = get_tmpfile("word2vec_format.vec")
+#     word2vec_file = get_tmpfile("word2vec_format.vec")
+    path = os.path.abspath(os.path.curdir)
+    path = os.path.join(path,"tmp")
+    if not os.path.exists(path):
+        os.makedirs(path)
+    word2vec_file = os.path.join(path,"word2vec_format.vec")
     glove2word2vec(glove_file, word2vec_file)
     print("Loading Glove vectors...")
     word_vectors = KeyedVectors.load_word2vec_format(word2vec_file)
